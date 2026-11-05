@@ -1,0 +1,298 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Car Parts Segmentation | YOLO26</title>
+
+    <!-- Connect external CSS -->
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+    <!-- ================= HEADER ================= -->
+
+    <header>
+        <h1>Car Parts Segmentation System</h1>
+        <p>YOLO26 Powered Instance Segmentation</p>
+    </header>
+
+
+    <main class="container">
+
+        <!-- ================= MESSAGES ================= -->
+
+        {% if error %}
+        <div class="message">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        {% if message %}
+        <div class="message success">
+            {{ message }}
+        </div>
+        {% endif %}
+
+
+        <!-- ================= IMAGE UPLOAD ================= -->
+
+        <section class="card">
+
+            <h2>Upload Car Image</h2>
+
+            <div class="upload-area">
+
+                <p>
+                    Upload a car image to detect and segment
+                    its individual parts.
+                </p>
+
+                <form action="{{ url_for('predict') }}"
+                      method="POST"
+                      enctype="multipart/form-data"
+                      id="uploadForm">
+
+                    <input
+                        type="file"
+                        name="image"
+                        id="imageInput"
+                        accept=".jpg,.jpeg,.png,.webp"
+                        required
+                    >
+
+                    <button type="submit" id="submitButton">
+                        Segment Image
+                    </button>
+
+                </form>
+
+
+                <!-- IMAGE PREVIEW -->
+
+                <div class="preview">
+
+                    <h3 id="previewHeading"
+                        style="display:none;">
+                        Selected Image
+                    </h3>
+
+                    <img
+                        id="imagePreview"
+                        alt="Uploaded car image preview"
+                        style="display:none;"
+                    >
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= SEGMENTATION RESULTS ================= -->
+
+        {% if result_image %}
+
+        <section class="card result-section">
+
+            <h2>Segmentation Results</h2>
+
+            <p>
+                Your YOLO26 model successfully processed
+                the uploaded car image.
+            </p>
+
+
+            <!-- ANNOTATED IMAGE -->
+
+            <h3>Segmented Car Image</h3>
+
+            <img
+                src="{{ url_for('static', filename=result_image) }}"
+                class="result-image"
+                alt="YOLO26 segmentation output"
+            >
+
+
+            <!-- MASK COUNT -->
+
+            <div class="result-summary">
+
+                <div class="summary-item">
+
+                    <h3>{{ mask_count }}</h3>
+
+                    <p>Segmentation Masks</p>
+
+                </div>
+
+                <div class="summary-item">
+
+                    <h3>{{ detected_parts|length }}</h3>
+
+                    <p>Detected Objects</p>
+
+                </div>
+
+            </div>
+
+
+            <!-- DETECTED CAR PARTS -->
+
+            <h3>Detected Car Parts</h3>
+
+            {% if detected_parts %}
+
+            <div class="parts-container">
+
+                {% for part in detected_parts %}
+
+                <div class="part-item">
+
+                    <span class="part-name">
+                        {{ part.name.replace('_', ' ')|title }}
+                    </span>
+
+                    <span class="confidence">
+                        {{ "%.2f"|format(part.confidence * 100) }}%
+                    </span>
+
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+            {% else %}
+
+            <p class="empty-message">
+                No car parts were detected in this image.
+            </p>
+
+            {% endif %}
+
+
+            <!-- DOWNLOAD RESULT -->
+
+            <a
+                href="{{ url_for('static', filename=result_image) }}"
+                download="car_parts_segmentation.jpg"
+                class="download-button"
+            >
+                Download Segmented Image
+            </a>
+
+        </section>
+
+        {% endif %}
+
+    </main>
+
+
+    <!-- ================= FOOTER ================= -->
+
+    <footer>
+
+        <p>
+            Car Parts Segmentation System
+        </p>
+
+        <p>
+            Powered by YOLO26, Python and Flask
+        </p>
+
+    </footer>
+
+
+    <!-- ================= JAVASCRIPT ================= -->
+
+    <script>
+
+        // Preview selected image before uploading
+
+        const imageInput =
+            document.getElementById("imageInput");
+
+        const imagePreview =
+            document.getElementById("imagePreview");
+
+        const previewHeading =
+            document.getElementById("previewHeading");
+
+
+        imageInput.addEventListener("change", function(event) {
+
+            const file = event.target.files[0];
+
+            if (file) {
+
+                const allowedTypes = [
+                    "image/jpeg",
+                    "image/png",
+                    "image/webp"
+                ];
+
+                if (!allowedTypes.includes(file.type)) {
+
+                    alert("Please select a JPG, PNG or WEBP image.");
+
+                    imageInput.value = "";
+
+                    imagePreview.style.display = "none";
+
+                    previewHeading.style.display = "none";
+
+                    return;
+                }
+
+                const imageURL = URL.createObjectURL(file);
+
+                imagePreview.src = imageURL;
+
+                imagePreview.style.display = "block";
+
+                previewHeading.style.display = "block";
+
+            }
+
+        });
+
+
+        // Show processing message after submission
+
+        const uploadForm =
+            document.getElementById("uploadForm");
+
+        const submitButton =
+            document.getElementById("submitButton");
+
+
+        uploadForm.addEventListener("submit", function(event) {
+
+            if (!imageInput.files.length) {
+
+                event.preventDefault();
+
+                alert("Please select a car image first.");
+
+                return;
+            }
+
+            submitButton.disabled = true;
+
+            submitButton.textContent =
+                "Processing Image... Please Wait";
+
+        });
+
+    </script>
+
+</body>
+
+</html>
